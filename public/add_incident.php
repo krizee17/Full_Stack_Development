@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 
 // Get all systems for dropdown
-$stmt = $conn->prepare("SELECT id, name, type FROM systems WHERE status = 'Active' ORDER BY name");
+$stmt = $conn->prepare("SELECT id, name, type FROM systems ORDER BY name");
 $stmt->execute();
 $systems = $stmt->fetchAll();
 ?>

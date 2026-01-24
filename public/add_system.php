@@ -10,7 +10,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $name = trim($_POST['name'] ?? '');
     $type = $_POST['type'] ?? '';
     $description = trim($_POST['description'] ?? '');
-    $status = $_POST['status'] ?? 'Active';
     
     // Validation
     if (empty($name) || empty($type)) {
@@ -18,13 +17,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         try {
             // Use prepared statement to prevent SQL injection
-            $stmt = $conn->prepare("INSERT INTO systems (name, type, description, status) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$name, $type, $description, $status]);
+            $stmt = $conn->prepare("INSERT INTO systems (name, type, description) VALUES (?, ?, ?)");
+            $stmt->execute([$name, $type, $description]);
             
             $success = 'System added successfully!';
             // Clear form
             $name = $type = $description = '';
-            $status = 'Active';
         } catch (PDOException $e) {
             $error = 'Error adding system: ' . $e->getMessage();
         }
@@ -55,6 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <option value="Server" <?php echo (isset($type) && $type == 'Server') ? 'selected' : ''; ?>>Server</option>
             <option value="Application" <?php echo (isset($type) && $type == 'Application') ? 'selected' : ''; ?>>Application</option>
             <option value="Database" <?php echo (isset($type) && $type == 'Database') ? 'selected' : ''; ?>>Database</option>
+            <option value="Firewall" <?php echo (isset($type) && $type == 'Firewall') ? 'selected' : ''; ?>>Firewall</option>
             <option value="Mail Gateway" <?php echo (isset($type) && $type == 'Mail Gateway') ? 'selected' : ''; ?>>Mail Gateway</option>
         </select>
     </div>
@@ -62,15 +61,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <div class="form-group">
         <label for="description">Description</label>
         <textarea id="description" name="description"><?php echo escape($description ?? ''); ?></textarea>
-    </div>
-    
-    <div class="form-group">
-        <label for="status">Status *</label>
-        <select id="status" name="status" required>
-            <option value="Active" <?php echo (isset($status) && $status == 'Active') ? 'selected' : ''; ?>>Active</option>
-            <option value="Inactive" <?php echo (isset($status) && $status == 'Inactive') ? 'selected' : ''; ?>>Inactive</option>
-            <option value="Maintenance" <?php echo (isset($status) && $status == 'Maintenance') ? 'selected' : ''; ?>>Maintenance</option>
-        </select>
     </div>
     
     <div class="form-group">

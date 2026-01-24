@@ -8,9 +8,37 @@ if (isset($_GET['deleted']) && $_GET['deleted'] == '1') {
     echo '<div class="alert alert-success">System deleted successfully!</div>';
 }
 
-// Get all systems
-$stmt = $conn->prepare("SELECT * FROM systems ORDER BY name");
-$stmt->execute();
+// Handle search
+$has_search = false;
+$query = "
+    SELECT s.*, COUNT(i.id) as incident_count 
+    FROM systems s 
+    LEFT JOIN incidents i ON s.id = i.affected_system_id 
+    WHERE 1=1";
+
+$params = [];
+
+if ($_SERVER['REQUEST_METHOD'] == 'GET' && !empty(array_filter($_GET))) {
+    $has_search = true;
+    
+    $name = trim($_GET['name'] ?? '');
+    $type = $_GET['type'] ?? '';
+    
+    if (!empty($name)) {
+        $query .= " AND s.name LIKE ?";
+        $params[] = "%$name%";
+    }
+    
+    if (!empty($type)) {
+        $query .= " AND s.type = ?";
+        $params[] = $type;
+    }
+}
+
+$query .= " GROUP BY s.id ORDER BY s.name";
+
+$stmt = $conn->prepare($query);
+$stmt->execute($params);
 $systems = $stmt->fetchAll();
 ?>
 
@@ -28,32 +56,25 @@ $systems = $stmt->fetchAll();
                 <th>Name</th>
                 <th>Type</th>
                 <th>Description</th>
-                <th>Status</th>
+                <th>Incident Count</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-            <?php if ($systems->num_rows > 0): ?>
-                <?php while ($system = $systems->fetch_assoc()): ?>
+            <?php if (count($systems) > 0): ?>
+                <?php foreach ($systems as $system): ?>
                     <tr>
                         <td><?php echo escape($system['id']); ?></td>
                         <td><?php echo escape($system['name']); ?></td>
                         <td><?php echo escape($system['type']); ?></td>
                         <td><?php echo escape($system['description'] ?: 'N/A'); ?></td>
-                        <td>
-                            <span class="badge <?php 
-                                echo $system['status'] == 'Active' ? 'status-resolved' : 
-                                    ($system['status'] == 'Inactive' ? 'status-detected' : 'status-investigating'); 
-                            ?>">
-                                <?php echo escape($system['status']); ?>
-                            </span>
-                        </td>
+                        <td><?php echo escape($system['incident_count']); ?></td>
                         <td class="action-buttons">
                             <a href="edit_system.php?id=<?php echo escape($system['id']); ?>" class="btn" style="padding: 5px 12px; font-size: 14px;">Edit</a>
                             <a href="delete_system.php?id=<?php echo escape($system['id']); ?>" class="btn btn-danger" style="padding: 5px 12px; font-size: 14px;" onclick="return confirmDelete('Are you sure you want to delete this system?')">Delete</a>
                         </td>
                     </tr>
-                <?php endwhile; ?>
+                <?php endforeach; ?>
             <?php else: ?>
                 <tr>
                     <td colspan="6" class="empty-state">No systems found. <a href="add_system.php">Add your first system</a></td>

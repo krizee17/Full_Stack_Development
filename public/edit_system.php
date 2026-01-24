@@ -21,22 +21,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $name = trim($_POST['name'] ?? '');
         $type = $_POST['type'] ?? '';
         $description = trim($_POST['description'] ?? '');
-        $status = $_POST['status'] ?? 'Active';
         
         // Validation
         if (empty($name) || empty($type)) {
             $error = 'Please fill in all required fields.';
         } else {
-            // Use prepared statement to prevent SQL injection
-            $stmt = $conn->prepare("UPDATE systems SET name = ?, type = ?, description = ?, status = ? WHERE id = ?");
-            $stmt->bind_param("ssssi", $name, $type, $description, $status, $id);
-            
-            if ($stmt->execute()) {
+            try {
+                // Use prepared statement to prevent SQL injection
+                $stmt = $conn->prepare("UPDATE systems SET name = ?, type = ?, description = ? WHERE id = ?");
+                $stmt->execute([$name, $type, $description, $id]);
+                
                 $success = 'System updated successfully!';
-            } else {
-                $error = 'Error updating system: ' . $conn->error;
+            } catch (PDOException $e) {
+                $error = 'Error updating system: ' . $e->getMessage();
             }
-            $stmt->close();
         }
     }
 }
@@ -77,6 +75,7 @@ if (!$system) {
             <option value="Server" <?php echo $system['type'] == 'Server' ? 'selected' : ''; ?>>Server</option>
             <option value="Application" <?php echo $system['type'] == 'Application' ? 'selected' : ''; ?>>Application</option>
             <option value="Database" <?php echo $system['type'] == 'Database' ? 'selected' : ''; ?>>Database</option>
+            <option value="Firewall" <?php echo $system['type'] == 'Firewall' ? 'selected' : ''; ?>>Firewall</option>
             <option value="Mail Gateway" <?php echo $system['type'] == 'Mail Gateway' ? 'selected' : ''; ?>>Mail Gateway</option>
         </select>
     </div>
@@ -84,15 +83,6 @@ if (!$system) {
     <div class="form-group">
         <label for="description">Description</label>
         <textarea id="description" name="description"><?php echo escape($system['description']); ?></textarea>
-    </div>
-    
-    <div class="form-group">
-        <label for="status">Status *</label>
-        <select id="status" name="status" required>
-            <option value="Active" <?php echo $system['status'] == 'Active' ? 'selected' : ''; ?>>Active</option>
-            <option value="Inactive" <?php echo $system['status'] == 'Inactive' ? 'selected' : ''; ?>>Inactive</option>
-            <option value="Maintenance" <?php echo $system['status'] == 'Maintenance' ? 'selected' : ''; ?>>Maintenance</option>
-        </select>
     </div>
     
     <div class="form-group">

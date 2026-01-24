@@ -14,13 +14,12 @@ require_once __DIR__ . '/functions.php';
 <body>
     <header>
         <div class="container">
-            <h1>🔒 Cybersecurity Incident Management</h1>
+            <h1> Cybersecurity Incident Management</h1>
             <nav>
                 <ul>
                     <li><a href="index.php">Dashboard</a></li>
                     <li><a href="incidents.php">Incidents</a></li>
                     <li><a href="systems.php">Systems</a></li>
-                    <li><a href="search.php">Search</a></li>
                 </ul>
             </nav>
         </div>

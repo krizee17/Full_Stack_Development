@@ -3,7 +3,7 @@
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
 define('DB_PASS', '');
-define('DB_NAME', 'cybersecurity_incidents');
+define('DB_NAME', 'incident_management_system');
 
 // Create database connection using PDO
 function getDBConnection() {
