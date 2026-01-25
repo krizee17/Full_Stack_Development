@@ -59,45 +59,6 @@ $recent_incidents = $stmt->fetchAll();
     </div>
 </div>
 
-<!-- Quick Search -->
-<div class="search-form" style="margin: 30px 0;">
-    <h3 style="margin-bottom: 15px;">Quick Search</h3>
-    <form method="GET" action="incidents.php">
-        <div class="form-row">
-            <div class="form-group">
-                <label for="incident_type">Incident Type</label>
-                <input type="text" id="incident_type" name="incident_type" placeholder="e.g., Malware, Phishing">
-            </div>
-            
-            <div class="form-group">
-                <label for="status">Status</label>
-                <select id="status" name="status">
-                    <option value="">All Statuses</option>
-                    <option value="Detected">Detected</option>
-                    <option value="Investigating">Investigating</option>
-                    <option value="Resolved">Resolved</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="severity">Severity</label>
-                <select id="severity" name="severity">
-                    <option value="">All Severities</option>
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                    <option value="Critical">Critical</option>
-                </select>
-            </div>
-        </div>
-        
-        <div class="form-group">
-            <button type="submit" class="btn">Search Incidents</button>
-            <a href="incidents.php" class="btn btn-secondary">View All</a>
-        </div>
-    </form>
-</div>
-
 <div style="margin-top: 30px;">
     <h3 style="margin-bottom: 15px;">Recent Incidents</h3>
     <div class="table-container">

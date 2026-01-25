@@ -8,37 +8,15 @@ if (isset($_GET['deleted']) && $_GET['deleted'] == '1') {
     echo '<div class="alert alert-success">System deleted successfully!</div>';
 }
 
-// Handle search
-$has_search = false;
-$query = "
+// Get all systems with incident counts
+$stmt = $conn->prepare("
     SELECT s.*, COUNT(i.id) as incident_count 
     FROM systems s 
     LEFT JOIN incidents i ON s.id = i.affected_system_id 
-    WHERE 1=1";
-
-$params = [];
-
-if ($_SERVER['REQUEST_METHOD'] == 'GET' && !empty(array_filter($_GET))) {
-    $has_search = true;
-    
-    $name = trim($_GET['name'] ?? '');
-    $type = $_GET['type'] ?? '';
-    
-    if (!empty($name)) {
-        $query .= " AND s.name LIKE ?";
-        $params[] = "%$name%";
-    }
-    
-    if (!empty($type)) {
-        $query .= " AND s.type = ?";
-        $params[] = $type;
-    }
-}
-
-$query .= " GROUP BY s.id ORDER BY s.name";
-
-$stmt = $conn->prepare($query);
-$stmt->execute($params);
+    GROUP BY s.id 
+    ORDER BY s.id ASC
+");
+$stmt->execute();
 $systems = $stmt->fetchAll();
 ?>
 
