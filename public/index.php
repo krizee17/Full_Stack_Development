@@ -3,6 +3,13 @@ require_once '../includes/header.php';
 
 $conn = getDBConnection();
 
+// Get filter parameters
+$severity = $_GET['severity'] ?? '';
+$status = $_GET['status'] ?? '';
+$system_id = intval($_GET['system_id'] ?? 0);
+$date_from = trim($_GET['date_from'] ?? '');
+$date_to = trim($_GET['date_to'] ?? '');
+
 // Get dashboard statistics
 $stats = [];
 
@@ -26,16 +33,48 @@ $stmt = $conn->prepare("SELECT COUNT(*) as count FROM incidents WHERE status = '
 $stmt->execute();
 $stats['resolved'] = $stmt->fetch()['count'];
 
-// Get recent incidents
-$stmt = $conn->prepare("
-    SELECT i.*, s.name as system_name 
+// Build query for recent incidents with filters
+$query = "SELECT i.*, s.name as system_name 
     FROM incidents i 
     JOIN systems s ON i.affected_system_id = s.id 
-    ORDER BY i.date_time DESC 
-    LIMIT 5
-");
-$stmt->execute();
+    WHERE 1=1";
+
+$params = [];
+
+if (!empty($severity)) {
+    $query .= " AND i.severity = ?";
+    $params[] = $severity;
+}
+
+if (!empty($status)) {
+    $query .= " AND i.status = ?";
+    $params[] = $status;
+}
+
+if ($system_id > 0) {
+    $query .= " AND i.affected_system_id = ?";
+    $params[] = $system_id;
+}
+
+if (!empty($date_from)) {
+    $query .= " AND DATE(i.date_time) >= ?";
+    $params[] = $date_from;
+}
+
+$query .= " ORDER BY i.date_time DESC LIMIT 5";
+
+$stmt = $conn->prepare($query);
+if (!empty($params)) {
+    $stmt->execute($params);
+} else {
+    $stmt->execute();
+}
 $recent_incidents = $stmt->fetchAll();
+
+// Get all systems for dropdown
+$stmt = $conn->prepare("SELECT id, name, type FROM systems ORDER BY name");
+$stmt->execute();
+$all_systems = $stmt->fetchAll();
 ?>
 
 <h2 class="page-title">Dashboard</h2>
@@ -60,7 +99,10 @@ $recent_incidents = $stmt->fetchAll();
 </div>
 
 <div style="margin-top: 30px;">
-    <h3 style="margin-bottom: 15px;">Recent Incidents</h3>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="margin: 0;">Recent Incidents</h3>
+        <button onclick="openFilterModal()" class="btn btn-secondary">Filter</button>
+    </div>
     <div class="table-container">
         <table>
             <thead>
@@ -93,6 +135,66 @@ $recent_incidents = $stmt->fetchAll();
     </div>
     <div style="margin-top: 15px;">
         <a href="incidents.php" class="btn">View All Incidents</a>
+    </div>
+</div>
+
+<!-- Filter Modal -->
+<div id="filterModal" class="modal-overlay">
+    <div class="filter-modal">
+        <div class="modal-header">
+            <h3>Filter Incidents</h3>
+            <button class="modal-close" onclick="closeFilterModal()">&times;</button>
+        </div>
+        <form method="GET" action="">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="severity">Severity</label>
+                    <select id="severity" name="severity">
+                        <option value="">All</option>
+                        <option value="Low" <?php echo $severity == 'Low' ? 'selected' : ''; ?>>Low</option>
+                        <option value="Medium" <?php echo $severity == 'Medium' ? 'selected' : ''; ?>>Medium</option>
+                        <option value="High" <?php echo $severity == 'High' ? 'selected' : ''; ?>>High</option>
+                        <option value="Critical" <?php echo $severity == 'Critical' ? 'selected' : ''; ?>>Critical</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="status">Status</label>
+                    <select id="status" name="status">
+                        <option value="">All</option>
+                        <option value="Detected" <?php echo $status == 'Detected' ? 'selected' : ''; ?>>Detected</option>
+                        <option value="Investigating" <?php echo $status == 'Investigating' ? 'selected' : ''; ?>>Investigating</option>
+                        <option value="Resolved" <?php echo $status == 'Resolved' ? 'selected' : ''; ?>>Resolved</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="system_id">Affected System</label>
+                    <select id="system_id" name="system_id">
+                        <option value="">All Systems</option>
+                        <?php foreach ($all_systems as $system): ?>
+                            <option value="<?php echo escape($system['id']); ?>" <?php echo $system_id == $system['id'] ? 'selected' : ''; ?>>
+                                <?php echo escape($system['name']); ?> (<?php echo escape($system['type']); ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="date_from">Date From</label>
+                    <input type="date" id="date_from" name="date_from" value="<?php echo escape($date_from); ?>" placeholder="mm/dd/yyyy">
+                </div>
+                
+                <div class="form-group">
+                    <label for="date_to">Date To</label>
+                    <input type="date" id="date_to" name="date_to" value="<?php echo escape($date_to); ?>" placeholder="mm/dd/yyyy">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="index.php" class="btn btn-secondary">Clear</a>
+                <button type="submit" class="btn">Apply Filters</button>
+            </div>
+        </form>
     </div>
 </div>
 

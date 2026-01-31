@@ -104,6 +104,29 @@ function confirmDelete(message) {
   return confirm(message || "Are you sure you want to delete this item?");
 }
 
+// Filter Modal Functions
+function openFilterModal() {
+  const modal = document.getElementById("filterModal");
+  if (modal) {
+    modal.classList.add("active");
+  }
+}
+
+function closeFilterModal() {
+  const modal = document.getElementById("filterModal");
+  if (modal) {
+    modal.classList.remove("active");
+  }
+}
+
+// Close modal when clicking outside
+document.addEventListener("click", function (event) {
+  const modal = document.getElementById("filterModal");
+  if (modal && event.target === modal) {
+    closeFilterModal();
+  }
+});
+
 // Initialize dashboard auto-refresh if on dashboard page
 document.addEventListener("DOMContentLoaded", function () {
   if (document.getElementById("total-incidents")) {
