@@ -77,7 +77,7 @@ if (!$system) {
         </tr>
         <tr>
             <th>Status</th>
-            <td><?php echo escape($system['status']); ?></td>
+            <td><?php echo escape($system['status'] ?? 'Unknown'); ?></td>
         </tr>
     </table>
 </div>

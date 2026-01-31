@@ -1,34 +1,50 @@
 <?php
 require_once '../includes/header.php';
+require_once '../includes/validation.php';
 
 $conn = getDBConnection();
 $error = '';
 $success = '';
+$errors = [];
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $incident_type = trim($_POST['incident_type'] ?? '');
-    $date_time = trim($_POST['date_time'] ?? '');
-    $affected_system_id = intval($_POST['affected_system_id'] ?? 0);
-    $severity = $_POST['severity'] ?? '';
-    $status = $_POST['status'] ?? 'Detected';
-    $resolution_notes = trim($_POST['resolution_notes'] ?? '');
-    
-    // Validation
-    if (empty($incident_type) || empty($date_time) || $affected_system_id == 0 || empty($severity)) {
-        $error = 'Please fill in all required fields.';
+    // Verify CSRF token
+    if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+        $error = 'Invalid security token. Please try again.';
     } else {
-        try {
-            // Use prepared statement to prevent SQL injection
-            $stmt = $conn->prepare("INSERT INTO incidents (incident_type, date_time, affected_system_id, severity, status, resolution_notes) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$incident_type, $date_time, $affected_system_id, $severity, $status, $resolution_notes]);
-            
-            $success = 'Incident added successfully!';
-            // Clear form
-            $incident_type = $date_time = $severity = $status = $resolution_notes = '';
-            $affected_system_id = 0;
-        } catch (PDOException $e) {
-            $error = 'Error adding incident: ' . $e->getMessage();
+        $incident_type = trim($_POST['incident_type'] ?? '');
+        $date_time = trim($_POST['date_time'] ?? '');
+        $affected_system_id = intval($_POST['affected_system_id'] ?? 0);
+        $severity = $_POST['severity'] ?? '';
+        $status = $_POST['status'] ?? 'Detected';
+        $resolution_notes = trim($_POST['resolution_notes'] ?? '');
+        
+        // Validate all fields
+        $validation = validateIncidentForm([
+            'incident_type' => $incident_type,
+            'date_time' => $date_time,
+            'affected_system_id' => $affected_system_id,
+            'severity' => $severity,
+            'status' => $status,
+            'resolution_notes' => $resolution_notes
+        ], $conn);
+        
+        if (!$validation['valid']) {
+            $errors = $validation['errors'];
+        } else {
+            try {
+                // Use prepared statement to prevent SQL injection
+                $stmt = $conn->prepare("INSERT INTO incidents (incident_type, date_time, affected_system_id, severity, status, resolution_notes) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$incident_type, $date_time, $affected_system_id, $severity, $status, $resolution_notes]);
+                
+                $success = 'Incident added successfully!';
+                // Clear form
+                $incident_type = $date_time = $severity = $status = $resolution_notes = '';
+                $affected_system_id = 0;
+            } catch (PDOException $e) {
+                $error = 'Error adding incident: ' . $e->getMessage();
+            }
         }
     }
 }
@@ -45,14 +61,26 @@ $systems = $stmt->fetchAll();
     <div class="alert alert-error"><?php echo escape($error); ?></div>
 <?php endif; ?>
 
+<?php if (count($errors) > 0): ?>
+    <div class="alert alert-error">
+        <strong>Please fix the following errors:</strong>
+        <ul style="margin: 10px 0 0 20px; padding: 0;">
+            <?php foreach ($errors as $err): ?>
+                <li><?php echo escape($err); ?></li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+<?php endif; ?>
+
 <?php if ($success): ?>
     <div class="alert alert-success"><?php echo escape($success); ?></div>
 <?php endif; ?>
 
 <form method="POST" action="">
+    <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
     <div class="form-group">
         <label for="incident_type">Incident Type *</label>
-        <input type="text" id="incident_type" name="incident_type" value="<?php echo escape($incident_type ?? ''); ?>" required>
+        <input type="text" id="incident_type" name="incident_type" value="<?php echo escape($incident_type ?? ''); ?>" required maxlength="255" minlength="3" placeholder="e.g., SQL Injection Attack">
     </div>
     
     <div class="form-group">
@@ -94,7 +122,8 @@ $systems = $stmt->fetchAll();
     
     <div class="form-group">
         <label for="resolution_notes">Resolution Notes</label>
-        <textarea id="resolution_notes" name="resolution_notes"><?php echo escape($resolution_notes ?? ''); ?></textarea>
+        <textarea id="resolution_notes" name="resolution_notes" maxlength="2000" placeholder="Document the resolution steps taken"><?php echo escape($resolution_notes ?? ''); ?></textarea>
+        <small>Max 2000 characters</small>
     </div>
     
     <div class="form-group">

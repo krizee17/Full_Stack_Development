@@ -1,9 +1,11 @@
 <?php
 require_once '../includes/header.php';
+require_once '../includes/validation.php';
 
 $conn = getDBConnection();
 $error = '';
 $success = '';
+$errors = [];
 
 $id = intval($_GET['id'] ?? 0);
 
@@ -25,9 +27,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $status = $_POST['status'] ?? 'Detected';
         $resolution_notes = trim($_POST['resolution_notes'] ?? '');
         
-        // Validation
-        if (empty($incident_type) || empty($date_time) || $affected_system_id == 0 || empty($severity)) {
-            $error = 'Please fill in all required fields.';
+        // Validate all fields
+        $validation = validateIncidentForm([
+            'incident_type' => $incident_type,
+            'date_time' => $date_time,
+            'affected_system_id' => $affected_system_id,
+            'severity' => $severity,
+            'status' => $status,
+            'resolution_notes' => $resolution_notes
+        ], $conn);
+        
+        if (!$validation['valid']) {
+            $errors = $validation['errors'];
         } else {
             try {
                 // Use prepared statement to prevent SQL injection
@@ -48,7 +59,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 $stmt = $conn->prepare("SELECT * FROM incidents WHERE id = ?");
 $stmt->execute([$id]);
 $incident = $stmt->fetch();
-
 if (!$incident) {
     header('Location: incidents.php');
     exit;
@@ -66,6 +76,17 @@ $systems = $stmt->fetchAll();
     <div class="alert alert-error"><?php echo escape($error); ?></div>
 <?php endif; ?>
 
+<?php if (count($errors) > 0): ?>
+    <div class="alert alert-error">
+        <strong>Please fix the following errors:</strong>
+        <ul style="margin: 10px 0 0 20px; padding: 0;">
+            <?php foreach ($errors as $err): ?>
+                <li><?php echo escape($err); ?></li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+<?php endif; ?>
+
 <?php if ($success): ?>
     <div class="alert alert-success"><?php echo escape($success); ?></div>
 <?php endif; ?>
@@ -75,7 +96,7 @@ $systems = $stmt->fetchAll();
     
     <div class="form-group">
         <label for="incident_type">Incident Type *</label>
-        <input type="text" id="incident_type" name="incident_type" value="<?php echo escape($incident['incident_type']); ?>" required>
+        <input type="text" id="incident_type" name="incident_type" value="<?php echo escape($incident['incident_type']); ?>" required maxlength="255" minlength="3">
     </div>
     
     <div class="form-group">
@@ -119,7 +140,8 @@ $systems = $stmt->fetchAll();
     
     <div class="form-group">
         <label for="resolution_notes">Resolution Notes</label>
-        <textarea id="resolution_notes" name="resolution_notes"><?php echo escape($incident['resolution_notes']); ?></textarea>
+        <textarea id="resolution_notes" name="resolution_notes" maxlength="2000"><?php echo escape($incident['resolution_notes']); ?></textarea>
+        <small>Max 2000 characters</small>
     </div>
 
     <div class="form-group">
