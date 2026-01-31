@@ -101,7 +101,6 @@ $all_systems = $stmt->fetchAll();
 <div style="margin-top: 30px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
         <h3 style="margin: 0;">Recent Incidents</h3>
-        <button onclick="openFilterModal()" class="btn btn-secondary">Filter</button>
     </div>
     <div class="table-container">
         <table>
@@ -138,64 +137,5 @@ $all_systems = $stmt->fetchAll();
     </div>
 </div>
 
-<!-- Filter Modal -->
-<div id="filterModal" class="modal-overlay">
-    <div class="filter-modal">
-        <div class="modal-header">
-            <h3>Filter Incidents</h3>
-            <button class="modal-close" onclick="closeFilterModal()">&times;</button>
-        </div>
-        <form method="GET" action="">
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="severity">Severity</label>
-                    <select id="severity" name="severity">
-                        <option value="">All</option>
-                        <option value="Low" <?php echo $severity == 'Low' ? 'selected' : ''; ?>>Low</option>
-                        <option value="Medium" <?php echo $severity == 'Medium' ? 'selected' : ''; ?>>Medium</option>
-                        <option value="High" <?php echo $severity == 'High' ? 'selected' : ''; ?>>High</option>
-                        <option value="Critical" <?php echo $severity == 'Critical' ? 'selected' : ''; ?>>Critical</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="status">Status</label>
-                    <select id="status" name="status">
-                        <option value="">All</option>
-                        <option value="Detected" <?php echo $status == 'Detected' ? 'selected' : ''; ?>>Detected</option>
-                        <option value="Investigating" <?php echo $status == 'Investigating' ? 'selected' : ''; ?>>Investigating</option>
-                        <option value="Resolved" <?php echo $status == 'Resolved' ? 'selected' : ''; ?>>Resolved</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="system_id">Affected System</label>
-                    <select id="system_id" name="system_id">
-                        <option value="">All Systems</option>
-                        <?php foreach ($all_systems as $system): ?>
-                            <option value="<?php echo escape($system['id']); ?>" <?php echo $system_id == $system['id'] ? 'selected' : ''; ?>>
-                                <?php echo escape($system['name']); ?> (<?php echo escape($system['type']); ?>)
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="date_from">Date From</label>
-                    <input type="date" id="date_from" name="date_from" value="<?php echo escape($date_from); ?>" placeholder="mm/dd/yyyy">
-                </div>
-                
-                <div class="form-group">
-                    <label for="date_to">Date To</label>
-                    <input type="date" id="date_to" name="date_to" value="<?php echo escape($date_to); ?>" placeholder="mm/dd/yyyy">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <a href="index.php" class="btn btn-secondary">Clear</a>
-                <button type="submit" class="btn">Apply Filters</button>
-            </div>
-        </form>
-    </div>
-</div>
 
 <?php require_once '../includes/footer.php'; ?>
