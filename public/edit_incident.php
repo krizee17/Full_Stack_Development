@@ -34,7 +34,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $stmt = $conn->prepare("UPDATE incidents SET incident_type = ?, date_time = ?, affected_system_id = ?, severity = ?, status = ?, resolution_notes = ? WHERE id = ?");
                 $stmt->execute([$incident_type, $date_time, $affected_system_id, $severity, $status, $resolution_notes, $id]);
                 
-                $success = 'Incident updated successfully!';
+                // Redirect to incidents page after successful update
+                header('Location: incidents.php');
+                exit;
             } catch (PDOException $e) {
                 $error = 'Error updating incident: ' . $e->getMessage();
             }
@@ -86,13 +88,12 @@ $systems = $stmt->fetchAll();
         <select id="affected_system_id" name="affected_system_id" required>
             <option value="">Select a system</option>
             <?php 
-            $systems->data_seek(0); // Reset result pointer
-            while ($system = $systems->fetch_assoc()): 
+            foreach ($systems as $system): 
             ?>
                 <option value="<?php echo escape($system['id']); ?>" <?php echo $incident['affected_system_id'] == $system['id'] ? 'selected' : ''; ?>>
                     <?php echo escape($system['name']); ?> (<?php echo escape($system['type']); ?>)
                 </option>
-            <?php endwhile; ?>
+            <?php endforeach; ?>
         </select>
     </div>
     
@@ -120,11 +121,12 @@ $systems = $stmt->fetchAll();
         <label for="resolution_notes">Resolution Notes</label>
         <textarea id="resolution_notes" name="resolution_notes"><?php echo escape($incident['resolution_notes']); ?></textarea>
     </div>
-    
+
     <div class="form-group">
         <button type="submit" class="btn">Update Incident</button>
         <a href="incidents.php" class="btn btn-secondary">Cancel</a>
     </div>
+    
 </form>
 
 <?php require_once '../includes/footer.php'; ?>

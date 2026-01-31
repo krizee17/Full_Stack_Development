@@ -48,7 +48,7 @@ if (!empty($date_to)) {
     $params[] = $date_to;
 }
 
-$query .= " ORDER BY i.date_time DESC";
+$query .= " ORDER BY i.affected_system_id ASC";
 
 $stmt = $conn->prepare($query);
 if (!empty($params)) {

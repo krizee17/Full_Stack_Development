@@ -30,8 +30,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 // Use prepared statement to prevent SQL injection
                 $stmt = $conn->prepare("UPDATE systems SET name = ?, type = ?, description = ? WHERE id = ?");
                 $stmt->execute([$name, $type, $description, $id]);
-                
-                $success = 'System updated successfully!';
+
+                // Redirect back to systems list after successful update
+                header('Location: systems.php');
+                exit;
             } catch (PDOException $e) {
                 $error = 'Error updating system: ' . $e->getMessage();
             }
